@@ -40,4 +40,6 @@ df.drop(columns=columns_to_remove, inplace=True)
 #        '휘트니스센터', '공용 PC실', '공용 샤워실', '상세정보', '환불규정']
 
 print(df.columns)
-df.to_csv("accommodation.csv")
+
+shortdf = df[:20]
+shortdf.to_csv("accommodation.csv")
