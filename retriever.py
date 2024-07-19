@@ -41,32 +41,55 @@ embedding_model = AzureOpenAIEmbeddings(
     model='text-embedding-3-small',  # 사용하려는 Azure OpenAI 모델 이름
 )
 
-doc_content_list = [doc.page_content for doc in documents]
-embeddings = embedding_model.embed_documents(doc_content_list)
+# doc_content_list = [doc.page_content for doc in documents]
+# embeddings = embedding_model.embed_documents(doc_content_list)
 
-print("\n", f"Number of Embed list of texts : {len(embeddings)}", "\n")
-print("\n", f"Sample Vector : {embeddings[0][:5]}")
-print("\n", f"Length of Sample Vector {len(embeddings[0])}", "\n")
+# print("\n", f"Number of Embed list of texts : {len(embeddings)}", "\n")
+# print("\n", f"Sample Vector : {embeddings[0][:5]}")
+# print("\n", f"Length of Sample Vector {len(embeddings[0])}", "\n")
 
 
-# Chroma 데이터베이스 생성
-vectorstore = Chroma.from_documents(documents, embedding_model)
+# import chromadb
+
+# persistent_client = chromadb.PersistentClient()
+# vectorstore = persistent_client.get_or_create_collection("vectorstore")
+
+
+# # Chroma 데이터베이스 로드 또는 생성
+# if os.path.exists(VECTORSTORE_DIR):
+#     print("Loading existing Chroma vectorstore...")
+#     vectorstore = Chroma.load_local(VECTORSTORE_DIR, embedding_model)
+# else:
+#     print("Creating new Chroma vectorstore...")
+#     doc_content_list = [doc.page_content for doc in documents]
+#     embeddings = embedding_model.embed_documents(doc_content_list)
+#     vectorstore = Chroma.from_documents(documents, embedding_model)
+#     vectorstore.save_local(VECTORSTORE_DIR)
 
 # 벡터를 디스크에 저장
 # vectorstore.save_local(CURR_DIR)
 
 # Chroma 데이터베이스 불러오기
 # vectorstore = Chroma.load_local(CURR_DIR, embedding_model)
+if os.path.exists(os.path.join(CURR_DIR, "vectorstore")):
+    print("load from disk...")
+    vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embedding_model)
+    docs = vectorstore.similarity_search("만리포 전경이 보이는 숙소")
+    print(docs[0])
+else:
+    print("save to disk...")
+    vectorstore = Chroma.from_documents(documents, embedding_model, persist_directory="./chroma_db")
+    docs = vectorstore.similarity_search("만리포 전경이 보이는 숙소")
+
+
+
+
+
 
 similarity_retriever = vectorstore.as_retriever(search_type="similarity")
 similarity_score_retriever = vectorstore.as_retriever(
     search_type="similarity_score_threshold",
     search_kwargs={"score_threshold": 0.01}
-)
-mmr_retriever = vectorstore.as_retriever(search_type="mmr")
-similarity_score_retriever = vectorstore.as_retriever(
-    search_type="similarity_score_threshold",
-    # search_kwargs={"score_threshold": 0.0}
 )
 # retriever!
 retriever = similarity_retriever
