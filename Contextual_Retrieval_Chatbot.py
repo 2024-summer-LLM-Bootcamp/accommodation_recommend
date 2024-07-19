@@ -124,7 +124,7 @@ You are an assistant for question-answering tasks.
 Use the following pieces of retrieved context to answer the question. 
 If you don't know the answer, just say that you don't know. 
 Use three sentences maximum and keep the answer concise.
-Answer for the question in Korean. If you don't know the answer, simply say '알 수 없습니다.'
+Answer the question in the same language as the question. If you don't know the answer, simply say 'I don't know' for English questions or '알 수 없습니다' for Korean questions.
 
 {context} """.strip()
 
