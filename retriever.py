@@ -61,65 +61,20 @@ vectorstore = Chroma.from_documents(documents, embedding_model)
 similarity_retriever = vectorstore.as_retriever(search_type="similarity")
 similarity_score_retriever = vectorstore.as_retriever(
     search_type="similarity_score_threshold",
-    search_kwargs={"score_threshold": 0.2}
+    search_kwargs={"score_threshold": 0.01}
 )
 mmr_retriever = vectorstore.as_retriever(search_type="mmr")
 similarity_score_retriever = vectorstore.as_retriever(
     search_type="similarity_score_threshold",
-    search_kwargs={"score_threshold": 0.2}
+    # search_kwargs={"score_threshold": 0.0}
 )
 # retriever!
 retriever = similarity_retriever
 
-# ---------------------------------------------------------------------
-
-# Generate
-'''
-system_prompt_str = """
-You are an assistant for question-answering tasks. 
-Use the following pieces of retrieved context to answer the question. 
-If you don't know the answer, just say that you don't know. 
-Use three sentences maximum and keep the answer concise.
-Answer for the question in Korean.
-
-{context} """.strip()
-
-prompt_template = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_prompt_str),
-        ("human", "{input}"),
-    ]
-)
-
-azure_model = AzureChatOpenAI(
-    azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-)
-
-question_answer_chain = create_stuff_documents_chain(
-    azure_model, prompt_template)
-rag_chain = create_retrieval_chain(retriever, question_answer_chain)
-
-# 쿼리를 벡터로 변환하고, 유사한 문서 검색
-# results = vectorstore.similarity_search(query)
-
-query_list = [
-    # "안녕, 나는 샘이라고 해",
-    "왕녀가 가지고 놀던 것은?",
-    "개구리의 정체는 뭐야?",
-    "둘은 마지막에 어떻게 되지?",
-    # "내 이름이 뭐라 그랬지?"
-]
-
-for query in query_list:
-    print(f"Me : {query}")
-    chain_output = rag_chain.invoke({"input": query})
-    # print("\n",chain_output,"\n")
-    print(f"LLM : {chain_output["answer"]}")
-    
-'''
 # 예제 쿼리
-query = "강원도 저렴한 숙소"
+query = "만리포 전경이 보이는 숙소"
 docs = retriever.invoke(query)
+print(len(docs))
 for doc in docs:
     print("-"*100)
     print(doc.page_content)
