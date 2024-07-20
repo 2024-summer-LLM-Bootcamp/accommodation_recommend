@@ -77,12 +77,12 @@ TV:Y
 PC:Y
 """
 
-
+# Create a Document object with the given text content
 room_document = Document(
     page_content=room_txt,
 )
 
-
+# Initialize the text splitter with specified parameters
 recursive_text_splitter = RecursiveCharacterTextSplitter(
     separators=["\n\n",".",","],
     chunk_size=200,
@@ -90,21 +90,22 @@ recursive_text_splitter = RecursiveCharacterTextSplitter(
     length_function=len,
 )
 
+# Split the document into smaller chunks
 recursive_splitted_document = recursive_text_splitter.split_documents([room_document])
 
-
+# Initialize the embedding model with Azure OpenAI parameters
 embedding_model=AzureOpenAIEmbeddings(
     model="text-embedding-3-small"
 )
 
-
+# Initialize the Chroma vector store
 chroma = Chroma("vector_store")
 vector_store = chroma.from_documents(
         documents=recursive_splitted_document,
         embedding=embedding_model
     )
 
-
+# Set up different retrievers for the vector store
 similarity_retriever = vector_store.as_retriever(search_type="similarity")
 mmr_retriever = vector_store.as_retriever(search_type="mmr")
 similarity_score_retriever = vector_store.as_retriever(
@@ -112,6 +113,7 @@ similarity_score_retriever = vector_store.as_retriever(
         search_kwargs={"score_threshold": 0.2}
     )
 
+# Choose a retriever to use
 retriever = similarity_retriever
 
 
@@ -119,6 +121,7 @@ retriever = similarity_retriever
 
 #Generate
 
+# Generate the system prompt for the question-answering task
 system_prompt_str = """
 You are an assistant for question-answering tasks. 
 Use the following pieces of retrieved context to answer the question. 
@@ -128,6 +131,7 @@ Answer the question in the same language as the question. If you don't know the 
 
 {context} """.strip()
 
+# Create a prompt template for the chat
 prompt_template = ChatPromptTemplate.from_messages(
     [
         ("system", system_prompt_str),
@@ -139,9 +143,12 @@ azure_model = AzureChatOpenAI(
     azure_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT"),
 )
 
+# Create the question-answering chain
 question_answer_chain = create_stuff_documents_chain(azure_model, prompt_template)
+# Create the retrieval chain
 rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
+# Initialize the chat with a system message
 messages = [
     SystemMessage(content="You are a helpful assistant. Answer all questions to the best of your ability."),
     ]
@@ -149,16 +156,16 @@ messages = [
 print("Assistant: Hello! How can I assist you today? (To exit, type 'bye')")
 
 while True:
-    user_input = input("You: ")
+    user_input = input("You: ")    # Get input from the user
 
-    if user_input.lower() in ["exit", "quit", "bye"]:
+    if user_input.lower() in ["exit", "quit", "bye"]:# Check for exit commands
         print("Assistant: Goodbye!")
         break
 
-    messages.append(HumanMessage(content=user_input))
+    messages.append(HumanMessage(content=user_input))    # Append user input to messages
 
-    chain_output = rag_chain.invoke({"input": user_input})
+    chain_output = rag_chain.invoke({"input": user_input})# Get the response from the RAG chain
 
-    print(f"Assistant: {chain_output['answer']}")
+    print(f"Assistant: {chain_output['answer']}")        # Print the assistant's response
 
-    messages.append(AIMessage(content=chain_output['answer']))
+    messages.append(AIMessage(content=chain_output['answer']))# Append the assistant's response to messages
